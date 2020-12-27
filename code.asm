@@ -18,20 +18,21 @@ STD_INPUT_HANDLE equ -10    ; дескриптор ввода
 .const 
 	NULL equ 0
 	MB_OK equ 0		; тип окна
-	n 			equ	3 ; колличество строк
+	n 			equ	4 ; колличество строк
 	m			equ	3  ; колличество столбцов
 	mn			equ	m*n ; длина массива
-	temp equ n-1
+	temp equ m-1
 	middle equ (mn-1)*2
 	elsizeequ		equ	4   ; байт в элементе
 	NmberOfDigits 	equ	7   ; символов в числе, реаsльно на 2 меньше
-                  rowsize                         equ             mn*elsizeequ ; байт в строке
 
 ; объявляем и инициализируем необходимые переменные
 .data
 	InputMsg db "Enter row:",0Ah,0Dh,0
                   MatrixMsg db "Matrix:",0Ah,0Dh,0
                   ResultMsg db "Sum: ",0Ah,0Dh,0
+				  Less db "less",0Ah,0Dh,0
+				  More db "more",0Ah,0Dh,0
                   endl db 0Ah,0Dh,0
                   space db " ",0
 	AnswerMessage1 db "Maximum element",0
@@ -53,6 +54,7 @@ STD_INPUT_HANDLE equ -10    ; дескриптор ввода
 
             ;Сумма нечетных элементов столбцов
                   sum dd ?
+				  middl1 dd ?
 
 .code
 
@@ -128,8 +130,27 @@ STD_INPUT_HANDLE equ -10    ; дескриптор ввода
 ;--------------------------Вычисление суммы диагональных элементов-----------------------------------
 
 	mov sum, 0
+	mov middl1, 0
     mov esi, 0
-	mov ecx, n
+	
+	mov eax, n
+	cmp eax, m
+	jl less
+	jnl notless
+
+less:
+	invoke PrintStringToConsole, offset Less
+	jmp begin
+	
+notless:
+	invoke PrintStringToConsole, offset More
+	jmp begin
+	
+	
+	
+begin:
+	invoke PrintStringToConsole, offset endl
+	mov ecx, m
 	
 
 	test ecx, 1
@@ -141,22 +162,30 @@ Odd:
 		mov eax, esi
 		add eax, 1
 		imul eax, temp
+		invoke PrintDwordToConsole, eax
+		invoke PrintStringToConsole, offset endl
 		imul eax, 4
 		mov ebx, [num+eax]
 		add sum, ebx
 		
 		mov eax, esi
-		imul eax, n
+		imul eax, m
 		add eax, esi
+		invoke PrintDwordToConsole, eax
+		invoke PrintStringToConsole, offset endl
 		imul eax, 4
 		mov ebx, [num+eax]
 		add sum, ebx
 		add esi,1
 		loop loop1
 		
-		mov eax, middle
+		mov eax, m
+		imul eax, m
+		sub eax, 1
+		imul eax, 2
+		mov esi, eax
 		mov eax, sum
-		sub eax, [num+middle]
+		sub eax, [num+esi]
 		mov sum, eax
 		jmp calc_end
 Even_:
@@ -164,6 +193,7 @@ Even_:
 		mov eax, n
 		add eax, 1
 		imul eax, esi
+		
 		imul eax, 4
 		mov ebx, [num+eax]
 		add sum, ebx
