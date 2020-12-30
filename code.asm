@@ -1,72 +1,71 @@
-; Р—Р°РґР°С‡Р° в„–7
-; РќР°Р№С‚Рё СЃСѓРјРјСѓ РґРёР°РіРѕРЅР°Р»СЊРЅС‹С… СЌР»РµРјРµРЅС‚РѕРІРј РјР°С‚СЂРёС†С‹ 3С…3
-.386p   ; С‚РёРї СЂРѕСЃРµСЃСЃРѕСЂР°: 80386 Рё РІС‹С€Рµ СЃ РјР°С‚РµРј. СЃРѕРїСЂРѕС†РµСЃСЃРѕСЂРѕРј
-.model flat,stdcall ; РїР»РѕСЃРєР°СЏ РјРѕРґРµР»СЊ РїР°РјСЏС‚Рё Рё СЃРѕРіР»Р°С€РµРЅРёРµ РїРѕ РїРµСЂРµРґР°С‡Рµ РїР°СЂР°РјРµС‚СЂРѕРІ stdcall
-option casemap:none ; СѓС‡РёС‚С‹РІР°С‚СЊ СЂРµРіРёСЃС‚СЂ РёРјРµРЅ
+; Задача №7
+; Найти сумму диагональных элементовм матрицы 3х3
+.386p   ; тип росессора: 80386 и выше с матем. сопроцессором
+.model flat,stdcall ; плоская модель памяти и соглашение по передаче параметров stdcall
+option casemap:none ; учитывать регистр имен
 
-includelib D:\masm32\lib\kernel32.lib   ; Р±РёР±Р»РёРѕС‚РµРєРё СЃС‚Р°С‚РёС‡РµСЃРєРѕРіРѕ СЃРІСЏР·С‹РІР°РЅРёСЏ РґР»СЏ kernel32.dll Рё РїСЂ.
+includelib D:\masm32\lib\kernel32.lib   ; библиотеки статического связывания для kernel32.dll и пр.
 includelib D:\masm32\lib\user32.lib
-includelib D:\masm32\lib\masm32.lib     ; РІРЅСѓС‚СЂРµРЅРЅСЏСЏ Р±РёР±Р»РёРѕС‚РµРєР° MASM32
-include D:\masm32\include\kernel32.inc  ; РєРѕРЅСЃС‚Р°РЅС‚С‹ Рё СЌРєСЃРїРѕСЂС‚ С„СѓРЅРєС†РёР№ РґР»СЏ kernel32.dll Рё РїСЂ.
+includelib D:\masm32\lib\masm32.lib     ; внутренняя библиотека MASM32
+include D:\masm32\include\kernel32.inc  ; константы и экспорт функций для kernel32.dll и пр.
 include D:\masm32\include\user32.inc
 include D:\masm32\include\masm32.inc
 
-STD_OUTPUT_HANDLE equ -11   ; РґРµСЃРєСЂРёРїС‚РѕСЂ РІС‹РІРѕРґР° (СЃРј. РїР°РјСЏС‚РєСѓ)
-STD_INPUT_HANDLE equ -10    ; РґРµСЃРєСЂРёРїС‚РѕСЂ РІРІРѕРґР°
+STD_OUTPUT_HANDLE equ -11   ; дескриптор вывода (см. памятку)
+STD_INPUT_HANDLE equ -10    ; дескриптор ввода
 
-; РѕР±СЉСЏРІР»СЏРµРј РЅРµРѕР±С…РѕРґРёРјС‹Рµ РєРѕРЅСЃС‚Р°РЅС‚С‹
+; объявляем необходимые константы
 .const 
 	NULL equ 0
-	MB_OK equ 0		; С‚РёРї РѕРєРЅР°
-	n 			equ	4 ; РєРѕР»Р»РёС‡РµСЃС‚РІРѕ СЃС‚СЂРѕРє
-	m			equ	3  ; РєРѕР»Р»РёС‡РµСЃС‚РІРѕ СЃС‚РѕР»Р±С†РѕРІ
-	mn			equ	m*n ; РґР»РёРЅР° РјР°СЃСЃРёРІР°
+	MB_OK equ 0		; тип окна
+	n 			equ	4 ; колличество строк
+	m			equ	3  ; колличество столбцов
+	mn			equ	m*n ; длина массива
 	temp equ m-1
 	middle equ (mn-1)*2
-	elsizeequ		equ	4   ; Р±Р°Р№С‚ РІ СЌР»РµРјРµРЅС‚Рµ
-	NmberOfDigits 	equ	7   ; СЃРёРјРІРѕР»РѕРІ РІ С‡РёСЃР»Рµ, СЂРµР°sР»СЊРЅРѕ РЅР° 2 РјРµРЅСЊС€Рµ
+	elsizeequ		equ	4   ; байт в элементе
+	NmberOfDigits 	equ	7   ; символов в числе, реаsльно на 2 меньше
 
-; РѕР±СЉСЏРІР»СЏРµРј Рё РёРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј РЅРµРѕР±С…РѕРґРёРјС‹Рµ РїРµСЂРµРјРµРЅРЅС‹Рµ
+; объявляем и инициализируем необходимые переменные
 .data
 	InputMsg db "Enter row:",0Ah,0Dh,0
                   MatrixMsg db "Matrix:",0Ah,0Dh,0
                   ResultMsg db "Sum: ",0Ah,0Dh,0
-				  Less db "less",0Ah,0Dh,0
-				  More db "more",0Ah,0Dh,0
                   endl db 0Ah,0Dh,0
                   space db " ",0
 	AnswerMessage1 db "Maximum element",0
 	AnswerMessage2 db "Column (j)",0
 	AnswerMessage3 db "Row (i)",0
 
-	BufferStr db NmberOfDigits dup (0h)     ; Р±СѓС„РµСЂ РґР»СЏ РІРІРѕРґР° С‡РёСЃРµР»
+	BufferStr db NmberOfDigits dup (0h)     ; буфер для ввода чисел
 	BufferStrO db 5 dup (0h)
-	num dd mn dup(0h)	; РјР°СЃРёРІ		
+	num dd mn dup(0h)	; масив		
 	sl dd 0
 
-; РѕР±СЉСЏРІР»СЏРµРј РЅРµРѕР±С…РѕРґРёРјС‹Рµ РґР»СЏ СЂР°Р±РѕС‚С‹ РїРµСЂРµРјРµРЅРЅС‹Рµ
+; объявляем необходимые для работы переменные
 .data?
 	OutHandle	dd	?
 	InHandle	dd	?
-	Len 	dd	?	; РґР»СЏ API С„СѓРЅРєС†РёР№
+	Len 	dd	?	; для API функций
  	Buffer	dd	?
 	ActRead dd	?
 
-            ;РЎСѓРјРјР° РЅРµС‡РµС‚РЅС‹С… СЌР»РµРјРµРЅС‚РѕРІ СЃС‚РѕР»Р±С†РѕРІ
+            ;Сумма нечетных элементов столбцов
                   sum dd ?
 				  middl1 dd ?
+				  tmp dd ?
 
 .code
 
-; РџСЂРѕС†РµРґСѓСЂС‹ РІРІРѕРґР° Рё РІС‹РІРѕРґР°
+; Процедуры ввода и вывода
 
-; uses СѓРєР°Р·С‹РІР°РµС‚ MASM'Сѓ РґРѕР±Р°РІРёС‚СЊ СЃРѕС…СЂР°РЅРµРЅРёРµ РЅР° СЃС‚РµРє СѓРєР°Р·Р°РЅРЅС‹С… СЂРµРіРёСЃС‚СЂРѕРІ
-; РїРµСЂРµРґ РІС‹Р·РѕРІРѕРј РїСЂРѕС†РµРґСѓСЂС‹ Рё РІРѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ РёС… РїРѕСЃР»Рµ Р·Р°РІРµСЂС€РµРЅРёСЏ
-; РІ РґР°РЅРЅРѕРј СЃР»СѓС‡Р°Рµ РјС‹ СЃРѕС…СЂР°РЅСЏРµРј ecx РїРѕСЃРєРѕР»СЊРєСѓ РѕРЅ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РІ loop
-; proto РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РґР»СЏ РѕРїСЂРµРґРµР»РµРЅРёСЏ С‚РёРїРѕРІ Р°СЂРіСѓРјРµРЅС‚РѕРІ,
-; С‚.Рµ. РїРѕРїС‹С‚РєР° РїРµСЂРµРґР°С‚СЊ PrintStringToConsole DWORD Р·Р°РєРѕРЅС‡РёС‚СЃСЏ РѕС€РёР±РєРѕР№ РІРѕ РІСЂРµРјСЏ РєРѕРјРїРёР»СЏС†РёРё
+; uses указывает MASM'у добавить сохранение на стек указанных регистров
+; перед вызовом процедуры и восстановить их после завершения
+; в данном случае мы сохраняем ecx поскольку он используется в loop
+; proto используется для определения типов аргументов,
+; т.е. попытка передать PrintStringToConsole DWORD закончится ошибкой во время компиляции
 
-; РџСЂРѕС†РµРґСѓСЂР° РІС‹РІРѕРґР° СЃС‚СЂРѕРєРё РЅР° РєРѕРЅСЃРѕР»СЊ (Р°СЂРіСѓРјРµРЅС‚ - Р°РґСЂРµСЃ СЃС‚СЂРѕРєРё)
+; Процедура вывода строки на консоль (аргумент - адрес строки)
     PrintStringToConsole proto val:PTR BYTE
     PrintStringToConsole proc uses eax ecx val:PTR BYTE
         invoke StrLen, val
@@ -75,7 +74,7 @@ STD_INPUT_HANDLE equ -10    ; РґРµСЃРєСЂРёРїС‚РѕСЂ РІРІРѕРґР°
         ret
     PrintStringToConsole endp
 
-; РџСЂРѕС†РµРґСѓСЂР° РІС‹РІРѕРґР° С‡РёСЃР»Р° РЅР° РєРѕРЅСЃРѕР»СЊ (Р°СЂРіСѓРјРµРЅС‚ - С‡РёСЃР»Рѕ)
+; Процедура вывода числа на консоль (аргумент - число)
     PrintDwordToConsole proto val:DWORD
     PrintDwordToConsole proc uses eax ecx val:DWORD
         invoke ltoa,val,offset BufferStrO
@@ -87,47 +86,47 @@ STD_INPUT_HANDLE equ -10    ; РґРµСЃРєСЂРёРїС‚РѕСЂ РІРІРѕРґР°
 	
 	
 
-; РџСЂРѕС†РµРґСѓСЂР° СЃС‡РёС‚С‹РІР°РЅРёСЏ С‡РёСЃР»Р° СЃ РєРѕРЅСЃРѕР»Рё (СЂРµР·СѓР»СЊС‚Р°С‚ РІ eax)
+; Процедура считывания числа с консоли (результат в eax)
     ReadIntFromConsole proto
     ReadIntFromConsole proc uses ecx
         invoke	ReadConsole,InHandle,offset BufferStr,NmberOfDigits,offset ActRead,0
-        invoke atol,offset BufferStr   ; РїРµСЂРµРІРѕРґРёРј РІ С‡РёСЃР»Рѕ
+        invoke atol,offset BufferStr   ; переводим в число
         ret
     ReadIntFromConsole endp
 
  start:
- ;------------------РџРѕР»СѓС‡Р°РµРј РґРµСЃРєСЂРёРїС‚РѕСЂС‹ РІРІРѕРґР° Рё РІС‹РІРѕРґР° -----------------
-	invoke GetStdHandle,STD_OUTPUT_HANDLE  ; HANDLE РґР»СЏ РІС‹РІРѕРґР°
-	mov OutHandle,eax			   ; Рё СЃРѕС…СЂР°РЅСЏРµРј РµРіРѕ
-	invoke GetStdHandle,STD_INPUT_HANDLE   ; HANDLE РґР»СЏ РІРІРѕРґР°
-	mov InHandle,eax			   ; Рё СЃРѕС…СЂР°РЅСЏРµРј РµРіРѕ
+ ;------------------Получаем дескрипторы ввода и вывода -----------------
+	invoke GetStdHandle,STD_OUTPUT_HANDLE  ; HANDLE для вывода
+	mov OutHandle,eax			   ; и сохраняем его
+	invoke GetStdHandle,STD_INPUT_HANDLE   ; HANDLE для ввода
+	mov InHandle,eax			   ; и сохраняем его
 
- ;---------------------------------Р’РІРѕРґ-----------------------------------
+ ;---------------------------------Ввод-----------------------------------
 	xor esi,esi
 	xor ecx,ecx
-	mov ecx,n              ; СЃРєРѕР»СЊРєРѕ СЃС‚СЂРѕРє
+	mov ecx,n              ; сколько строк
 	mov esi,offset num						
 	
-	OUTTER:		     ; С†РёРєР» РїРѕ СЃС‚СЂРѕРєР°Рј
+	OUTTER:		     ; цикл по строкам
 		push ecx
-		mov ecx,m     ; СЃРєРѕР»СЊРєРѕ СЃС‚РѕР»Р±С†РѕРІ (РїРѕРІС‚РѕСЂРѕРІ РІР»РѕР¶РµРЅРЅРѕРіРѕ С†РёРєР»Р°)
+		mov ecx,m     ; сколько столбцов (повторов вложенного цикла)
 		
-		; РІС‹РІРѕРґ РїСЂРёРіР»Р°С€РµРЅРёСЏ
+		; вывод приглашения
                                     invoke PrintStringToConsole, offset InputMsg
 
-		; РІРЅСѓС‚СЂРµРЅРЅРёР№ С†РёРєР»
+		; внутренний цикл
 	INNER:
-                                    ; СЃС‡РёС‚С‹РІР°РµРј РІ Р±СѓС„РµСЂ СЃС‚СЂРѕРєСѓ
+                                    ; считываем в буфер строку
                                     invoke ReadIntFromConsole
 		mov [esi],eax
-		add esi,elsizeequ ; СЃРјРµС‰Р°РµРјСЃСЏ Рє СЃР»РµРґСѓСЋС‰РµРјСѓ СЌР»РµРјРµРЅС‚Сѓ
+		add esi,elsizeequ ; смещаемся к следующему элементу
 
 		loop INNER
 
 		pop ecx
 		loop OUTTER
 
-;--------------------------Р’С‹С‡РёСЃР»РµРЅРёРµ СЃСѓРјРјС‹ РґРёР°РіРѕРЅР°Р»СЊРЅС‹С… СЌР»РµРјРµРЅС‚РѕРІ-----------------------------------
+;--------------------------Вычисление суммы диагональных элементов-----------------------------------
 
 	mov sum, 0
 	mov middl1, 0
@@ -135,121 +134,95 @@ STD_INPUT_HANDLE equ -10    ; РґРµСЃРєСЂРёРїС‚РѕСЂ РІРІРѕРґР°
 	
 	mov eax, n
 	cmp eax, m
-	jl less
-	jnl notless
+	jle notgreater
+	jg greater
 
-less:
-	invoke PrintStringToConsole, offset Less
-	jmp begin
+	notgreater:
+		mov ecx, n
+		mov edi, n
+		mov middl1, 2*(mn-m+n-1)
+		jmp loop1
 	
-notless:
-	invoke PrintStringToConsole, offset More
-	jmp begin
+	greater:
+		mov ecx, m
+		mov edi, m
+		mov middl1, 2*(m*m-1)
 	
 	
-	
-begin:
-	invoke PrintStringToConsole, offset endl
-	mov ecx, m
-	
-
-	test ecx, 1
-	jnz Odd
-	jz Even_
-Odd:
 
 	loop1:
-		mov eax, esi
-		add eax, 1
-		imul eax, temp
-		invoke PrintDwordToConsole, eax
-		invoke PrintStringToConsole, offset endl
-		imul eax, 4
-		mov ebx, [num+eax]
-		add sum, ebx
-		
-		mov eax, esi
-		imul eax, m
-		add eax, esi
-		invoke PrintDwordToConsole, eax
-		invoke PrintStringToConsole, offset endl
-		imul eax, 4
-		mov ebx, [num+eax]
-		add sum, ebx
-		add esi,1
-		loop loop1
-		
+		;побочная диагональ
 		mov eax, m
-		imul eax, m
+		imul eax, esi
+		sub eax, esi
+		add eax, edi
 		sub eax, 1
-		imul eax, 2
-		mov esi, eax
+		imul eax, 4
+		mov ebx, [num+eax]
+		add sum, ebx
+	
+		;главная диагональ
+		mov eax, esi
+		imul eax, m+1
+		imul eax, 4
+		mov ebx, [num+eax]
+		add sum, ebx
+	
+		add esi,1
+	loop loop1
+
+	test edi, 1
+	jz calc_end
+	
+	sub_central_element:	
+		;вычитание центрального элемента
+		mov esi, middl1
 		mov eax, sum
 		sub eax, [num+esi]
 		mov sum, eax
-		jmp calc_end
-Even_:
-	loop2:
-		mov eax, n
-		add eax, 1
-		imul eax, esi
-		
-		imul eax, 4
-		mov ebx, [num+eax]
-		add sum, ebx
-		
-		mov eax, esi
-		add eax, 1
-		imul eax, n-1
-		imul eax, 4
-		mov ebx, [num+eax]
-		add sum, ebx
-		add esi,1
-		loop loop2
 
 
-
-calc_end:
+	calc_end:
 		
 	
-;--------------------------Р’С‹РІРѕРґ СЂРµР·СѓР»СЊС‚Р°С‚Р°-----------------------------------
+;--------------------------Вывод результата-----------------------------------
                   
 	xor ecx,ecx
 	xor ebp,ebp
 	xor esi,esi
 
-                  ; Р’С‹РІРѕРґРёРј РјР°С‚СЂРёС†Сѓ РІ РєРѕРЅСЃРѕР»СЊ
+                  ; Выводим матрицу в консоль
                   invoke PrintStringToConsole, offset endl
                   invoke PrintStringToConsole, offset MatrixMsg
 
-                  ; Р¦РёРєР» РїРѕ СЃС‚СЂРѕРєР°Рј
+                  ; Цикл по строкам
                   mov esi, 0
                   mov ecx, n
                   PRINTROW:
                     push ecx
 
-                    ; Р¦РёРєР» РїРѕ СЃС‚РѕР»Р±С†Р°Рј
+                    ; Цикл по столбцам
                     mov ecx, m
                     PRINTCOLUMN:
                         invoke PrintDwordToConsole, [num+esi]
                         invoke PrintStringToConsole, offset space
                     
-                        ; РЎР»РµРґСѓСЋС‰РёР№ СЌР»РµРјРµРЅС‚
+                        ; Следующий элемент
                         add esi, elsizeequ
                         loop PRINTCOLUMN
 
-                    ; РЎР»РµРґСѓСЋС‰Р°СЏ СЃС‚СЂРѕРєР°
+                    ; Следующая строка
                     invoke PrintStringToConsole, offset endl
                     pop ecx
                     loop PRINTROW
 
                   invoke PrintStringToConsole, offset endl
 
-                  ; Р’С‹РІРѕРґРёРј РѕС‚РІРµС‚ РІ РєРѕРЅСЃРѕР»СЊ
+                  ; Выводим ответ в консоль
                   invoke PrintStringToConsole, offset ResultMsg
                   invoke PrintDwordToConsole, sum
             
 
-;---------------------------Р’С‹С…РѕРґ--------------------------------------------
+;---------------------------Выход--------------------------------------------
  INVOKE ExitProcess,0
  end    start 
