@@ -21,21 +21,16 @@ STD_INPUT_HANDLE equ -10    ; дескриптор ввода
 	n 			equ	4 ; колличество строк
 	m			equ	3  ; колличество столбцов
 	mn			equ	m*n ; длина массива
-	temp equ m-1
-	middle equ (mn-1)*2
 	elsizeequ		equ	4   ; байт в элементе
 	NmberOfDigits 	equ	7   ; символов в числе, реаsльно на 2 меньше
 
 ; объявляем и инициализируем необходимые переменные
 .data
 	InputMsg db "Enter row:",0Ah,0Dh,0
-                  MatrixMsg db "Matrix:",0Ah,0Dh,0
-                  ResultMsg db "Sum: ",0Ah,0Dh,0
-                  endl db 0Ah,0Dh,0
-                  space db " ",0
-	AnswerMessage1 db "Maximum element",0
-	AnswerMessage2 db "Column (j)",0
-	AnswerMessage3 db "Row (i)",0
+    MatrixMsg db "Matrix:",0Ah,0Dh,0
+    ResultMsg db "Sum: ",0Ah,0Dh,0
+    endl db 0Ah,0Dh,0
+    space db " ",0
 
 	BufferStr db NmberOfDigits dup (0h)     ; буфер для ввода чисел
 	BufferStrO db 5 dup (0h)
@@ -50,10 +45,9 @@ STD_INPUT_HANDLE equ -10    ; дескриптор ввода
  	Buffer	dd	?
 	ActRead dd	?
 
-            ;Сумма нечетных элементов столбцов
-                  sum dd ?
-				  middl1 dd ?
-				  tmp dd ?
+    ;Сумма диагональных элементов
+    sum dd ?
+	middle dd ?
 
 .code
 
@@ -110,26 +104,22 @@ STD_INPUT_HANDLE equ -10    ; дескриптор ввода
 	OUTTER:		     ; цикл по строкам
 		push ecx
 		mov ecx,m     ; сколько столбцов (повторов вложенного цикла)
+        invoke PrintStringToConsole, offset InputMsg ; вывод приглашения
 		
-		; вывод приглашения
-                                    invoke PrintStringToConsole, offset InputMsg
-
-		; внутренний цикл
-	INNER:
-                                    ; считываем в буфер строку
-                                    invoke ReadIntFromConsole
-		mov [esi],eax
-		add esi,elsizeequ ; смещаемся к следующему элементу
+		INNER: 			; цикл по стоблцам
+			invoke ReadIntFromConsole ; считываем в буфер строку
+			mov [esi],eax
+			add esi,elsizeequ ; смещаемся к следующему элементу
 
 		loop INNER
 
 		pop ecx
-		loop OUTTER
+	loop OUTTER
 
 ;--------------------------Вычисление суммы диагональных элементов-----------------------------------
 
 	mov sum, 0
-	mov middl1, 0
+	mov middle, 0
     mov esi, 0
 	
 	mov eax, n
@@ -140,17 +130,17 @@ STD_INPUT_HANDLE equ -10    ; дескриптор ввода
 	notgreater:
 		mov ecx, n
 		mov edi, n
-		mov middl1, 2*(mn-m+n-1)
-		jmp loop1
+		mov middle, 2*(mn-m+n-1)
+		jmp loop_
 	
 	greater:
 		mov ecx, m
 		mov edi, m
-		mov middl1, 2*(m*m-1)
+		mov middle, 2*(m*m-1)
 	
 	
 
-	loop1:
+	loop_:
 		;побочная диагональ
 		mov eax, m
 		imul eax, esi
@@ -169,60 +159,55 @@ STD_INPUT_HANDLE equ -10    ; дескриптор ввода
 		add sum, ebx
 	
 		add esi,1
-	loop loop1
+	loop loop_
 
 	test edi, 1
 	jz calc_end
 	
 	sub_central_element:	
 		;вычитание центрального элемента
-		mov esi, middl1
+		mov esi, middle
 		mov eax, sum
 		sub eax, [num+esi]
 		mov sum, eax
 
 
 	calc_end:
-		
-	
 ;--------------------------Вывод результата-----------------------------------
                   
 	xor ecx,ecx
 	xor ebp,ebp
 	xor esi,esi
 
-                  ; Выводим матрицу в консоль
-                  invoke PrintStringToConsole, offset endl
-                  invoke PrintStringToConsole, offset MatrixMsg
+    ; Выводим матрицу в консоль
+    invoke PrintStringToConsole, offset endl
+    invoke PrintStringToConsole, offset MatrixMsg
 
-                  ; Цикл по строкам
-                  mov esi, 0
-                  mov ecx, n
-                  PRINTROW:
-                    push ecx
-
-                    ; Цикл по столбцам
-                    mov ecx, m
-                    PRINTCOLUMN:
-                        invoke PrintDwordToConsole, [num+esi]
-                        invoke PrintStringToConsole, offset space
+    ; Цикл по строкам
+    mov esi, 0
+    mov ecx, n
+    PRINTROW:
+		push ecx
+		; Цикл по столбцам
+        mov ecx, m
+        PRINTCOLUMN:
+            invoke PrintDwordToConsole, [num+esi]
+            invoke PrintStringToConsole, offset space
                     
-                        ; Следующий элемент
-                        add esi, elsizeequ
-                        loop PRINTCOLUMN
+            ; Следующий элемент
+            add esi, elsizeequ
+        loop PRINTCOLUMN
 
-                    ; Следующая строка
-                    invoke PrintStringToConsole, offset endl
-                    pop ecx
-                    loop PRINTROW
+        ; Следующая строка
+        invoke PrintStringToConsole, offset endl
+        pop ecx
+    loop PRINTROW
 
-                  invoke PrintStringToConsole, offset endl
+    invoke PrintStringToConsole, offset endl
 
-                  ; Выводим ответ в консоль
-                  invoke PrintStringToConsole, offset ResultMsg
-                  invoke PrintDwordToConsole, sum
-            
-
+    ; Выводим ответ в консоль
+    invoke PrintStringToConsole, offset ResultMsg
+    invoke PrintDwordToConsole, sum
 ;---------------------------Выход--------------------------------------------
- INVOKE ExitProcess,0
+ invoke ExitProcess,0
  end    start 
